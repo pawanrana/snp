@@ -24,6 +24,14 @@ def load_series(data):
     return pd.Series(data[0], index=list(range(len(data[0]))))
 
 def load_pandas(file_name,cols,pd_cols):
+    '''
+    convert csv into pandas df
+    cols: columns to read in csv
+    pd_cols = columns used in df
+    >> a = load_pandas('closing_data.csv',
+        ['snp_close','nyse_close'],
+        ['snp_close','nyse_close'])
+    '''
     if len(cols) != len(pd_cols):
         print "length of cols and pd_cols doesn't match"
     df = pd.DataFrame()
