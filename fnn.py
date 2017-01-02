@@ -27,7 +27,7 @@ def train_NN(training_predictors_tf,training_classes_tf,test_predictors_tf,test_
   feature_data = tf.placeholder("float", [None, num_predictors])
   actual_classes = tf.placeholder("float", [None, 2])
 
-  weights1 = tf.Variable(tf.truncated_normal([, 50], stddev=0.0001))
+  weights1 = tf.Variable(tf.truncated_normal([input_len, 50], stddev=0.0001))
   biases1 = tf.Variable(tf.ones([50]))
 
   weights2 = tf.Variable(tf.truncated_normal([50, 25], stddev=0.0001))

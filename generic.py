@@ -6,10 +6,7 @@ from pandas.tools.plotting import scatter_matrix
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from snp import tf_confusion_metrics,training_predictors_tf,
-				training_classes_tf,test_predictors_tf,
-				test_classes_tf,classes_tf,
-				training_set_size,test_set_size
+from snp import tf_confusion_metrics,training_predictors_tf,training_classes_tf,predictors_tf,test_predictors_tf,test_classes_tf,classes_tf,training_set_size,test_set_size
 from fnn import train_NN
 
 count = 0
@@ -46,6 +43,6 @@ def evolve(pop, target, retain=0.2, random_select=0.05, mutate=0.01):
 p = population(count,length)
 for i in xrange(iterations):
 	p = evolve(p, target)
-	print grade_of_generation()
+	#print grade_of_generation(p, target)
 
 print train_NN(y,c,y_,c_)
