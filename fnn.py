@@ -1,123 +1,77 @@
-def tf_confusion_metrics(model, actual_classes, session, feed_dict):
-  predictions = tf.argmax(model, 1)
-  actuals = tf.argmax(actual_classes, 1)
+from libs.utils import load_pandas
+import StringIO
+import pandas as pd
+from pandas.tools.plotting import autocorrelation_plot
+from pandas.tools.plotting import scatter_matrix
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from snp import tf_confusion_metrics,training_predictors_tf,training_classes_tf,test_predictors_tf,test_classes_tf
 
-  ones_like_actuals = tf.ones_like(actuals)
-  zeros_like_actuals = tf.zeros_like(actuals)
-  ones_like_predictions = tf.ones_like(predictions)
-  zeros_like_predictions = tf.zeros_like(predictions)
+#changeing structure of NN into accepting parameters, instead of hard coding
+#implementing random initilize
+#implementing population production
 
-  tp_op = tf.reduce_sum(
-    tf.cast(
-      tf.logical_and(
-        tf.equal(actuals, ones_like_actuals), 
-        tf.equal(predictions, ones_like_predictions)
-      ), 
-      "float"
-    )
-  )
+def train_NN(training_predictors_tf,training_classes_tf,test_predictors_tf,test_classes_tf):
+  y = training_predictors_tf
+  c = training_classes_tf
+  y_ = test_predictors_tf
+  c_ = test_classes_tf
+  input_len = len(y.columns)
 
-  tn_op = tf.reduce_sum(
-    tf.cast(
-      tf.logical_and(
-        tf.equal(actuals, zeros_like_actuals), 
-        tf.equal(predictions, zeros_like_predictions)
-      ), 
-      "float"
-    )
-  )
+  sess = tf.Session()
 
-  fp_op = tf.reduce_sum(
-    tf.cast(
-      tf.logical_and(
-        tf.equal(actuals, zeros_like_actuals), 
-        tf.equal(predictions, ones_like_predictions)
-      ), 
-      "float"
-    )
-  )
+  num_predictors = len(training_predictors_tf.columns)
+  num_classes = len(training_classes_tf.columns)
 
-  fn_op = tf.reduce_sum(
-    tf.cast(
-      tf.logical_and(
-        tf.equal(actuals, ones_like_actuals), 
-        tf.equal(predictions, zeros_like_predictions)
-      ), 
-      "float"
-    )
-  )
+  feature_data = tf.placeholder("float", [None, num_predictors])
+  actual_classes = tf.placeholder("float", [None, 2])
 
-  tp, tn, fp, fn = \
-    session.run(
-      [tp_op, tn_op, fp_op, fn_op], 
-      feed_dict
-    )
+  weights1 = tf.Variable(tf.truncated_normal([, 50], stddev=0.0001))
+  biases1 = tf.Variable(tf.ones([50]))
 
-  tpr = float(tp)/(float(tp) + float(fn))
-  fpr = float(fp)/(float(tp) + float(fn))
+  weights2 = tf.Variable(tf.truncated_normal([50, 25], stddev=0.0001))
+  biases2 = tf.Variable(tf.ones([25]))
+                       
+  weights3 = tf.Variable(tf.truncated_normal([25, 2], stddev=0.0001))
+  biases3 = tf.Variable(tf.ones([2]))
 
-  accuracy = (float(tp) + float(tn))/(float(tp) + float(fp) + float(fn) + float(tn))
+  hidden_layer_1 = tf.nn.relu(tf.matmul(feature_data, weights1) + biases1)
+  hidden_layer_2 = tf.nn.relu(tf.matmul(hidden_layer_1, weights2) + biases2)
+  model = tf.nn.softmax(tf.matmul(hidden_layer_2, weights3) + biases3)
 
-  recall = tpr
-  precision = float(tp)/(float(tp) + float(fp))
-  
-  f1_score = (2 * (precision * recall)) / (precision + recall)
-  
-  print 'Precision = ', precision
-  print 'Recall = ', recall
-  print 'F1 Score = ', f1_score
-  print 'Accuracy = ', accuracy
+  cost = -tf.reduce_sum(actual_classes*tf.log(model))
 
-sess = tf.Session()
+  train_op1 = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(cost)
 
-# Define variables for the number of predictors and number of classes to remove magic numbers from our code.
-num_predictors = len(training_predictors_tf.columns) # 24 in the default case
-num_classes = len(training_classes_tf.columns) # 2 in the default case
+  init = tf.initialize_all_variables()
+  sess.run(init)
 
-# Define placeholders for the data we feed into the process - feature data and actual classes.
-feature_data = tf.placeholder("float", [None, num_predictors])
-actual_classes = tf.placeholder("float", [None, num_classes])
+  correct_prediction = tf.equal(tf.argmax(model, 1), tf.argmax(actual_classes, 1))
+  accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
-# Define a matrix of weights and initialize it with some small random values.
-weights = tf.Variable(tf.truncated_normal([num_predictors, num_classes], stddev=0.0001))
-biases = tf.Variable(tf.ones([num_classes]))
-
-# Define our model...
-# Here we take a softmax regression of the product of our feature data and weights.
-model = tf.nn.softmax(tf.matmul(feature_data, weights) + biases)
-
-# Define a cost function (we're using the cross entropy).
-cost = -tf.reduce_sum(actual_classes*tf.log(model))
-
-# Define a training step...
-# Here we use gradient descent with a learning rate of 0.01 using the cost function we just defined.
-training_step = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(cost)
-
-init = tf.initialize_all_variables()
-sess.run(init)
-
-correct_prediction = tf.equal(tf.argmax(model, 1), tf.argmax(actual_classes, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-
-for i in range(1, 30001):
-  sess.run(
-    training_step, 
-    feed_dict={
-      feature_data: training_predictors_tf.values, 
-      actual_classes: training_classes_tf.values.reshape(len(training_classes_tf.values), 2)
-    }
-  )
-  if i%5000 == 0:
-    print i, sess.run(
-      accuracy,
+  for i in range(1, 30001):
+    sess.run(
+      train_op1, 
       feed_dict={
         feature_data: training_predictors_tf.values, 
         actual_classes: training_classes_tf.values.reshape(len(training_classes_tf.values), 2)
       }
     )
-feed_dict= {
-  feature_data: test_predictors_tf.values,
-  actual_classes: test_classes_tf.values.reshape(len(test_classes_tf.values), 2)
-}
+    if i%5000 == 0:
+      print i, sess.run(
+        accuracy,
+        feed_dict={
+          feature_data: training_predictors_tf.values, 
+          actual_classes: training_classes_tf.values.reshape(len(training_classes_tf.values), 2)
+        }
+      )
 
-tf_confusion_metrics(model, actual_classes, sess, feed_dict)
+  feed_dict= {
+    feature_data: test_predictors_tf.values,
+    actual_classes: test_classes_tf.values.reshape(len(test_classes_tf.values), 2)
+  }
+
+  tf_confusion_metrics(model, actual_classes, sess, feed_dict)
+
+  return accuracy

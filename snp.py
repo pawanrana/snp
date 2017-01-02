@@ -74,24 +74,6 @@ training_test_data = pd.DataFrame(
     'dax_log_return_0', 'dax_log_return_1', 'dax_log_return_2',
     'aord_log_return_0', 'aord_log_return_1', 'aord_log_return_2'])
 
-
-log_return_data['snp_log_return_positive'] = 0
-log_return_data.ix[log_return_data['snp_log_return'] >= 0, 'snp_log_return_positive'] = 1
-log_return_data['snp_log_return_negative'] = 0
-log_return_data.ix[log_return_data['snp_log_return'] < 0, 'snp_log_return_negative'] = 1
-
-training_test_data = pd.DataFrame(
-  columns=[
-    'snp_log_return_positive', 'snp_log_return_negative',
-    'snp_log_return_1', 'snp_log_return_2', 'snp_log_return_3',
-    'nyse_log_return_1', 'nyse_log_return_2', 'nyse_log_return_3',
-    'djia_log_return_1', 'djia_log_return_2', 'djia_log_return_3',
-    'nikkei_log_return_0', 'nikkei_log_return_1', 'nikkei_log_return_2',
-    'hangseng_log_return_0', 'hangseng_log_return_1', 'hangseng_log_return_2',
-    'ftse_log_return_0', 'ftse_log_return_1', 'ftse_log_return_2',
-    'dax_log_return_0', 'dax_log_return_1', 'dax_log_return_2',
-    'aord_log_return_0', 'aord_log_return_1', 'aord_log_return_2'])
-
 for i in range(7, len(log_return_data)):
   snp_log_return_positive = log_return_data['snp_log_return_positive'].ix[i]
   snp_log_return_negative = log_return_data['snp_log_return_negative'].ix[i]
@@ -234,58 +216,3 @@ def tf_confusion_metrics(model, actual_classes, session, feed_dict):
   print 'Recall = ', recall
   print 'F1 Score = ', f1_score
   print 'Accuracy = ', accuracy
-
-sess1 = tf.Session()
-
-num_predictors = len(training_predictors_tf.columns)
-num_classes = len(training_classes_tf.columns)
-
-feature_data = tf.placeholder("float", [None, num_predictors])
-actual_classes = tf.placeholder("float", [None, 2])
-
-weights1 = tf.Variable(tf.truncated_normal([24, 50], stddev=0.0001))
-biases1 = tf.Variable(tf.ones([50]))
-
-weights2 = tf.Variable(tf.truncated_normal([50, 25], stddev=0.0001))
-biases2 = tf.Variable(tf.ones([25]))
-                     
-weights3 = tf.Variable(tf.truncated_normal([25, 2], stddev=0.0001))
-biases3 = tf.Variable(tf.ones([2]))
-
-hidden_layer_1 = tf.nn.relu(tf.matmul(feature_data, weights1) + biases1)
-hidden_layer_2 = tf.nn.relu(tf.matmul(hidden_layer_1, weights2) + biases2)
-model = tf.nn.softmax(tf.matmul(hidden_layer_2, weights3) + biases3)
-
-cost = -tf.reduce_sum(actual_classes*tf.log(model))
-
-train_op1 = tf.train.AdamOptimizer(learning_rate=0.0001).minimize(cost)
-
-init = tf.initialize_all_variables()
-sess1.run(init)
-
-correct_prediction = tf.equal(tf.argmax(model, 1), tf.argmax(actual_classes, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-
-for i in range(1, 30001):
-  sess1.run(
-    train_op1, 
-    feed_dict={
-      feature_data: training_predictors_tf.values, 
-      actual_classes: training_classes_tf.values.reshape(len(training_classes_tf.values), 2)
-    }
-  )
-  if i%5000 == 0:
-    print i, sess1.run(
-      accuracy,
-      feed_dict={
-        feature_data: training_predictors_tf.values, 
-        actual_classes: training_classes_tf.values.reshape(len(training_classes_tf.values), 2)
-      }
-    )
-
-feed_dict= {
-  feature_data: test_predictors_tf.values,
-  actual_classes: test_classes_tf.values.reshape(len(test_classes_tf.values), 2)
-}
-
-tf_confusion_metrics(model, actual_classes, sess1, feed_dict)
