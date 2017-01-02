@@ -1,4 +1,4 @@
-from libs.utils import load_data,load_df,load_series
+from libs.utils import load_pandas
 import StringIO
 import pandas as pd
 from pandas.tools.plotting import autocorrelation_plot
@@ -11,52 +11,34 @@ closing_data = pd.DataFrame()
 # Pandas includes a very convenient function for filling gaps in the data.
 closing_data = closing_data.fillna(method='ffill')
 
-snp = load_data('snp.csv',['Close'])
-nyse = load_data('nyse.csv',['Close'])
+list_stock = ['snp_close','nyse_close','djia_close',
+              'nikkei_close','hangseng_close','ftse_close',
+              'dax_close','aord_close']
 
-closing_data['snp_close'] = load_series(snp)
-closing_data['nyse_close'] = load_series(nyse)
-#print closing_data.describe()
-
-_ = pd.concat([closing_data['snp_close'],
-  closing_data['nyse_close']],  axis=1).plot(figsize=(20, 15))
-#plt.show()
+closing_data = load_pandas('closing_data.csv',
+                        list_stock,
+                        list_stock)
 
 closing_data['snp_close_scaled'] = closing_data['snp_close'] / max(closing_data['snp_close'])
 closing_data['nyse_close_scaled'] = closing_data['nyse_close'] / max(closing_data['nyse_close'])
-
-_ = pd.concat([closing_data['snp_close_scaled'],
-  closing_data['nyse_close_scaled']], axis=1).plot(figsize=(20, 15))
-
-_ = autocorrelation_plot(closing_data['snp_close'], label='snp_close')
-_ = autocorrelation_plot(closing_data['nyse_close'], label='nyse_close')
-_ = plt.legend(loc='upper right')
-
-_ = scatter_matrix(pd.concat([closing_data['snp_close_scaled'],
-  closing_data['nyse_close_scaled']], axis=1), figsize=(20, 20), diagonal='kde')
+closing_data['djia_close_scaled'] = closing_data['djia_close'] / max(closing_data['djia_close'])
+closing_data['nikkei_close_scaled'] = closing_data['nikkei_close'] / max(closing_data['nikkei_close'])
+closing_data['hangseng_close_scaled'] = closing_data['hangseng_close'] / max(closing_data['hangseng_close'])
+closing_data['ftse_close_scaled'] = closing_data['ftse_close'] / max(closing_data['ftse_close'])
+closing_data['dax_close_scaled'] = closing_data['dax_close'] / max(closing_data['dax_close'])
+closing_data['aord_close_scaled'] = closing_data['aord_close'] / max(closing_data['aord_close'])
 
 log_return_data = pd.DataFrame()
 log_return_data['snp_log_return'] = np.log(closing_data['snp_close']/closing_data['snp_close'].shift())
 log_return_data['nyse_log_return'] = np.log(closing_data['nyse_close']/closing_data['nyse_close'].shift())
+log_return_data['djia_log_return'] = np.log(closing_data['djia_close']/closing_data['djia_close'].shift())
+log_return_data['nikkei_log_return'] = np.log(closing_data['nikkei_close']/closing_data['nikkei_close'].shift())
+log_return_data['hangseng_log_return'] = np.log(closing_data['hangseng_close']/closing_data['hangseng_close'].shift())
+log_return_data['ftse_log_return'] = np.log(closing_data['ftse_close']/closing_data['ftse_close'].shift())
+log_return_data['dax_log_return'] = np.log(closing_data['dax_close']/closing_data['dax_close'].shift())
+log_return_data['aord_log_return'] = np.log(closing_data['aord_close']/closing_data['aord_close'].shift())
 
-_ = pd.concat([log_return_data['snp_log_return'],
-  log_return_data['nyse_log_return']], axis=1).plot(figsize=(20, 15))
-
-fig = plt.figure()
-fig.set_figwidth(20)
-fig.set_figheight(15)
-
-_ = autocorrelation_plot(log_return_data['snp_log_return'], label='snp_log_return')
-_ = autocorrelation_plot(log_return_data['nyse_log_return'], label='nyse_log_return')
-
-_ = plt.legend(loc='upper right')
-
-_ = scatter_matrix(log_return_data, figsize=(20, 20), diagonal='kde')
-
-tmp = pd.DataFrame()
-tmp['snp_0'] = log_return_data['snp_log_return']
-tmp['nyse_1'] = log_return_data['nyse_log_return'].shift()
-tmp.corr().iloc[:,0]
+log_return_data.describe()
 
 log_return_data['snp_log_return_positive'] = 0
 log_return_data.ix[log_return_data['snp_log_return'] >= 0, 'snp_log_return_positive'] = 1
@@ -67,7 +49,48 @@ training_test_data = pd.DataFrame(
   columns=[
     'snp_log_return_positive', 'snp_log_return_negative',
     'snp_log_return_1', 'snp_log_return_2', 'snp_log_return_3',
-    'nyse_log_return_1', 'nyse_log_return_2', 'nyse_log_return_3'])
+    'nyse_log_return_1', 'nyse_log_return_2', 'nyse_log_return_3',
+    'djia_log_return_1', 'djia_log_return_2', 'djia_log_return_3',
+    'nikkei_log_return_0', 'nikkei_log_return_1', 'nikkei_log_return_2',
+    'hangseng_log_return_0', 'hangseng_log_return_1', 'hangseng_log_return_2',
+    'ftse_log_return_0', 'ftse_log_return_1', 'ftse_log_return_2',
+    'dax_log_return_0', 'dax_log_return_1', 'dax_log_return_2',
+    'aord_log_return_0', 'aord_log_return_1', 'aord_log_return_2'])
+
+log_return_data['snp_log_return_positive'] = 0
+log_return_data.ix[log_return_data['snp_log_return'] >= 0, 'snp_log_return_positive'] = 1
+log_return_data['snp_log_return_negative'] = 0
+log_return_data.ix[log_return_data['snp_log_return'] < 0, 'snp_log_return_negative'] = 1
+
+training_test_data = pd.DataFrame(
+  columns=[
+    'snp_log_return_positive', 'snp_log_return_negative',
+    'snp_log_return_1', 'snp_log_return_2', 'snp_log_return_3',
+    'nyse_log_return_1', 'nyse_log_return_2', 'nyse_log_return_3',
+    'djia_log_return_1', 'djia_log_return_2', 'djia_log_return_3',
+    'nikkei_log_return_0', 'nikkei_log_return_1', 'nikkei_log_return_2',
+    'hangseng_log_return_0', 'hangseng_log_return_1', 'hangseng_log_return_2',
+    'ftse_log_return_0', 'ftse_log_return_1', 'ftse_log_return_2',
+    'dax_log_return_0', 'dax_log_return_1', 'dax_log_return_2',
+    'aord_log_return_0', 'aord_log_return_1', 'aord_log_return_2'])
+
+
+log_return_data['snp_log_return_positive'] = 0
+log_return_data.ix[log_return_data['snp_log_return'] >= 0, 'snp_log_return_positive'] = 1
+log_return_data['snp_log_return_negative'] = 0
+log_return_data.ix[log_return_data['snp_log_return'] < 0, 'snp_log_return_negative'] = 1
+
+training_test_data = pd.DataFrame(
+  columns=[
+    'snp_log_return_positive', 'snp_log_return_negative',
+    'snp_log_return_1', 'snp_log_return_2', 'snp_log_return_3',
+    'nyse_log_return_1', 'nyse_log_return_2', 'nyse_log_return_3',
+    'djia_log_return_1', 'djia_log_return_2', 'djia_log_return_3',
+    'nikkei_log_return_0', 'nikkei_log_return_1', 'nikkei_log_return_2',
+    'hangseng_log_return_0', 'hangseng_log_return_1', 'hangseng_log_return_2',
+    'ftse_log_return_0', 'ftse_log_return_1', 'ftse_log_return_2',
+    'dax_log_return_0', 'dax_log_return_1', 'dax_log_return_2',
+    'aord_log_return_0', 'aord_log_return_1', 'aord_log_return_2'])
 
 for i in range(7, len(log_return_data)):
   snp_log_return_positive = log_return_data['snp_log_return_positive'].ix[i]
@@ -78,6 +101,24 @@ for i in range(7, len(log_return_data)):
   nyse_log_return_1 = log_return_data['nyse_log_return'].ix[i-1]
   nyse_log_return_2 = log_return_data['nyse_log_return'].ix[i-2]
   nyse_log_return_3 = log_return_data['nyse_log_return'].ix[i-3]
+  djia_log_return_1 = log_return_data['djia_log_return'].ix[i-1]
+  djia_log_return_2 = log_return_data['djia_log_return'].ix[i-2]
+  djia_log_return_3 = log_return_data['djia_log_return'].ix[i-3]
+  nikkei_log_return_0 = log_return_data['nikkei_log_return'].ix[i]
+  nikkei_log_return_1 = log_return_data['nikkei_log_return'].ix[i-1]
+  nikkei_log_return_2 = log_return_data['nikkei_log_return'].ix[i-2]
+  hangseng_log_return_0 = log_return_data['hangseng_log_return'].ix[i]
+  hangseng_log_return_1 = log_return_data['hangseng_log_return'].ix[i-1]
+  hangseng_log_return_2 = log_return_data['hangseng_log_return'].ix[i-2]
+  ftse_log_return_0 = log_return_data['ftse_log_return'].ix[i]
+  ftse_log_return_1 = log_return_data['ftse_log_return'].ix[i-1]
+  ftse_log_return_2 = log_return_data['ftse_log_return'].ix[i-2]
+  dax_log_return_0 = log_return_data['dax_log_return'].ix[i]
+  dax_log_return_1 = log_return_data['dax_log_return'].ix[i-1]
+  dax_log_return_2 = log_return_data['dax_log_return'].ix[i-2]
+  aord_log_return_0 = log_return_data['aord_log_return'].ix[i]
+  aord_log_return_1 = log_return_data['aord_log_return'].ix[i-1]
+  aord_log_return_2 = log_return_data['aord_log_return'].ix[i-2]
   training_test_data = training_test_data.append(
     {'snp_log_return_positive':snp_log_return_positive,
     'snp_log_return_negative':snp_log_return_negative,
@@ -86,10 +127,28 @@ for i in range(7, len(log_return_data)):
     'snp_log_return_3':snp_log_return_3,
     'nyse_log_return_1':nyse_log_return_1,
     'nyse_log_return_2':nyse_log_return_2,
-    'nyse_log_return_3':nyse_log_return_3},
+    'nyse_log_return_3':nyse_log_return_3,
+    'djia_log_return_1':djia_log_return_1,
+    'djia_log_return_2':djia_log_return_2,
+    'djia_log_return_3':djia_log_return_3,
+    'nikkei_log_return_0':nikkei_log_return_0,
+    'nikkei_log_return_1':nikkei_log_return_1,
+    'nikkei_log_return_2':nikkei_log_return_2,
+    'hangseng_log_return_0':hangseng_log_return_0,
+    'hangseng_log_return_1':hangseng_log_return_1,
+    'hangseng_log_return_2':hangseng_log_return_2,
+    'ftse_log_return_0':ftse_log_return_0,
+    'ftse_log_return_1':ftse_log_return_1,
+    'ftse_log_return_2':ftse_log_return_2,
+    'dax_log_return_0':dax_log_return_0,
+    'dax_log_return_1':dax_log_return_1,
+    'dax_log_return_2':dax_log_return_2,
+    'aord_log_return_0':aord_log_return_0,
+    'aord_log_return_1':aord_log_return_1,
+    'aord_log_return_2':aord_log_return_2},
     ignore_index=True)
   
-#print training_test_data.describe()
+print training_test_data.describe()
 
 predictors_tf = training_test_data[training_test_data.columns[2:]]
 
@@ -184,13 +243,13 @@ num_classes = len(training_classes_tf.columns)
 feature_data = tf.placeholder("float", [None, num_predictors])
 actual_classes = tf.placeholder("float", [None, 2])
 
-weights1 = tf.Variable(tf.truncated_normal([6, 24], stddev=0.0001))
-biases1 = tf.Variable(tf.ones([24]))
+weights1 = tf.Variable(tf.truncated_normal([24, 50], stddev=0.0001))
+biases1 = tf.Variable(tf.ones([50]))
 
-weights2 = tf.Variable(tf.truncated_normal([24, 12], stddev=0.0001))
-biases2 = tf.Variable(tf.ones([12]))
+weights2 = tf.Variable(tf.truncated_normal([50, 25], stddev=0.0001))
+biases2 = tf.Variable(tf.ones([25]))
                      
-weights3 = tf.Variable(tf.truncated_normal([12, 2], stddev=0.0001))
+weights3 = tf.Variable(tf.truncated_normal([25, 2], stddev=0.0001))
 biases3 = tf.Variable(tf.ones([2]))
 
 hidden_layer_1 = tf.nn.relu(tf.matmul(feature_data, weights1) + biases1)
